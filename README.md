@@ -5,7 +5,7 @@ R Scraper for Zhihu, a popular Quora-like question-and-answer platform in China
 ## Using
 
 * `search_zhihu()`: search posts by keyword
-* `answers_zhihu()`: retrieve answers from a given question
+* `answer_zhihu()`: retrieve answers from a given question
 * `comment_zhihu()`: retrieve comments from a given post
 * `child_comment_zhihu()`: retrieve child comments from a given comment
 

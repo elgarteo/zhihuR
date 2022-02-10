@@ -10,7 +10,7 @@ library(dplyr)
 
 .cookie_string <- "\"AIAd0x-RZROPTgLVVevqLR6wbdu2E2cngB8=|1626013553\""
 
-# Function to convert list object into URL encoded format
+# Function to convert list object into encoded URL parameters
 .urlencode <- function(x) {
   URLencode(paste0(paste(names(x), x, sep = "="), collapse = "&"))
 }
@@ -101,7 +101,7 @@ search_zhihu <- function(keyword, offset = 0, all = TRUE) {
   url_params <- list(
     t = "general", q = keyword, correction = 1, offset = offset, limit = 20, 
     filter_fields = "", lc_idx = offset, show_all_topics = 0, 
-    search_source = "Filter", # or Normal
+    search_source = "Filter", # "Normal" if no additional parameters afterwards
     sort = "created_time" # add vertical = "answer" to retrieve only answers
   )
   .fetch_data("search_v3", url_params, all)
@@ -113,10 +113,10 @@ search_zhihu <- function(keyword, offset = 0, all = TRUE) {
 #' @param offset integer, offset of search results, default to `0`
 #' @param all logical, whether to fetch all search results, default to `TRUE`
 #' 
-answers_zhihu <- function(id, offset = 0, all = TRUE) {
+answer_zhihu <- function(id, offset = 0, all = TRUE) {
   message("Fetching answers from question ", id, "...")
   include_string <- "data[*].is_normal,admin_closed_comment,reward_info,is_collapsed,annotation_action,annotation_detail,collapse_reason,is_sticky,collapsed_by,suggest_edit,comment_count,can_comment,content,editable_content,attachment,voteup_count,reshipment_settings,comment_permission,created_time,updated_time,review_info,relevant_info,question,excerpt,is_labeled,paid_info,paid_info_content,relationship.is_authorized,is_author,voting,is_thanked,is_nothelp,is_recognized;data[*].mark_infos[*].url;data[*].author.follower_count,vip_info,badge[*].topics;data[*].settings.table_of_content.enabled"
-  include_string <- gsub("%2A", "*", URLencode(include_string, reserved = TRUE)) # the asterisk should not be encoded
+  include_string <- gsub("%2A", "*", URLencode(include_string, reserved = TRUE)) # asterisks are not encoded
   url_params <- list(
     include = include_string,
     offset = offset, limit = 20, sort_by = "updated"
@@ -125,10 +125,10 @@ answers_zhihu <- function(id, offset = 0, all = TRUE) {
   .fetch_data(endpoint, url_params, all)
 }
 
-#' Function to scrap comments
+#' Function to scrap comments of a given post
 #'
 #' @param id Unique id of the content
-#' @param type Type of the content, typically `"answer"`, `"article"`, 
+#' @param type Type of post, typically `"answer"`, `"article"`, 
 #' `"question"`, `"videoanwser"`, or `"zvideo"`, or as specified in the 
 #' column `object.type` in the result returned by `search_zhihu()`
 #' @param offset integer, offset of search results, default to `0`
@@ -144,7 +144,7 @@ comment_zhihu <- function(id, type, offset = 0, all = TRUE) {
   .fetch_data(endpoint, url_params, all)
 }
 
-#' Function to scrap child comments
+#' Function to scrap child comments of a given comment
 #'
 #' @param id Unique id of the root comment
 #' @param offset integer, offset of search results, default to `0`
