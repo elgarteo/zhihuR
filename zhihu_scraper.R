@@ -113,7 +113,7 @@ search_zhihu <- function(keyword, offset = 0, all = TRUE) {
 #' @param offset integer, offset of search results, default to `0`
 #' @param all logical, whether to fetch all search results, default to `TRUE`
 #' 
-answer_zhihu <- function(id, offset = 0, all = TRUE) {
+zhihu_answer <- function(id, offset = 0, all = TRUE) {
   message("Fetching answers from question ", id, "...")
   include_string <- "data[*].is_normal,admin_closed_comment,reward_info,is_collapsed,annotation_action,annotation_detail,collapse_reason,is_sticky,collapsed_by,suggest_edit,comment_count,can_comment,content,editable_content,attachment,voteup_count,reshipment_settings,comment_permission,created_time,updated_time,review_info,relevant_info,question,excerpt,is_labeled,paid_info,paid_info_content,relationship.is_authorized,is_author,voting,is_thanked,is_nothelp,is_recognized;data[*].mark_infos[*].url;data[*].author.follower_count,vip_info,badge[*].topics;data[*].settings.table_of_content.enabled"
   include_string <- gsub("%2A", "*", URLencode(include_string, reserved = TRUE)) # asterisks are not encoded
@@ -134,7 +134,7 @@ answer_zhihu <- function(id, offset = 0, all = TRUE) {
 #' @param offset integer, offset of search results, default to `0`
 #' @param all logical, whether to fetch all search results, default to `TRUE`
 #' 
-comment_zhihu <- function(id, type, offset = 0, all = TRUE) {
+zhihu_comment <- function(id, type, offset = 0, all = TRUE) {
   message("Fetching comments from content ", id, "...")
   url_params <- list(
     order = "reverse", # "normal" for default order
@@ -150,11 +150,25 @@ comment_zhihu <- function(id, type, offset = 0, all = TRUE) {
 #' @param offset integer, offset of search results, default to `0`
 #' @param all logical, whether to fetch all search results, default to `TRUE`
 #' 
-child_comment_zhihu <- function(id, type, offset = 0, all = TRUE) {
+zhihu_child_comment <- function(id, type, offset = 0, all = TRUE) {
   message("Fetching child comments of comment ", id, "...")
   url_params <- list(
     limit = 20, offset = offset
   )
   endpoint <- sprintf("comments/%s/child_comments", id)
   .fetch_data(endpoint, url_params, all)
+}
+
+#' Function to scrap user information
+#'
+#' @param handle Unique handle of a user
+#' 
+zhihu_user <- function(handle) {
+  message("Fetching information of user `", handle, "`...")
+  include_string <- "juror,locations,employments,gender,educations,business,voteup_count,thanked_Count,follower_count,following_count,cover_url,following_topic_count,following_question_count,following_favlists_count,following_columns_count,avatar_hue,answer_count,zvideo_count,articles_count,pins_count,question_count,columns_count,commercial_question_count,favorite_count,favorited_count,logs_count,included_answers_count,included_articles_count,included_text,message_thread_token,account_status,is_active,is_bind_phone,is_force_renamed,is_privacy_protected,is_blocking,is_blocked,is_following,is_followed,mutual_followees_count,vote_to_count,vote_from_count,thank_to_count,thank_from_count,thanked_count,description,hosted_live_count,participated_live_count,allow_message,recognized_count,widgets,industry_category,org_name,org_homepage,is_org_createpin_white_user,badge[?(type=best_answerer)].topics"
+  url_params <- list(
+    include = include_string
+  )
+  endpoint <- sprintf("members/%s", handle)
+  .access_api(endpoint, url_params)
 }
