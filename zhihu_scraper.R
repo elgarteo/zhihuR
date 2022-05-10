@@ -93,17 +93,33 @@ library(dplyr)
 #' Function to perform search on Zhihu sort by time
 #'
 #' @param keyword Search keyword
+#' @param type type of posts to search, default to `all`
+#' @param time time interval to search, default to `all`
+#' @param sort how should the result be sorted, default to `default`
 #' @param offset integer, offset of search results, default to `0`
 #' @param all logical, whether to fetch all search results, default to `TRUE`
 #' 
-search_zhihu <- function(keyword, offset = 0, all = TRUE) {
+search_zhihu <- function(keyword, 
+                         type = c("all", "answer", "article", "zvideo"), 
+                         time = c("all", "a_day", "a_week", "a_month", "three_month", "half_a_year", "a_year"),
+                         sort = c("default", "upvoted_count", "created_time"),
+                         offset = 0, all = TRUE) {
   message("Searching content with keyword ", keyword, "...")
   url_params <- list(
     t = "general", q = keyword, correction = 1, offset = offset, limit = 20, 
     filter_fields = "", lc_idx = offset, show_all_topics = 0, 
-    search_source = "Filter", # "Normal" if no additional parameters afterwards
-    sort = "created_time" # add vertical = "answer" to retrieve only answers
+    search_source = "Filter"#, # "Normal" if no additional parameters afterwards
+    #sort = "created_time" # add vertical = "answer" to retrieve only answers
   )
+  if (type[1] != "all") {
+    url_params[["vertical"]] <- type[1]
+  }
+  if (time[1] != "all") {
+    url_params[["time_interval"]] <- time[1]
+  }
+  if (sort[1] != "default") {
+    url_params[["sort"]] <- sort[1]
+  }
   .fetch_data("search_v3", url_params, all)
 }
 
