@@ -58,6 +58,21 @@ library(dplyr)
   res
 }
 
+# Function to compile the proper request to retrieve data from Zhihu using an older API
+.access_old_api <- function(endpoint, url_param) {
+  custom_header <- add_headers(
+    `User-Agent` = sample(.user_agents, 1),
+    cookie = paste0("d_c0=", .cookie_string)
+  )
+  url <- sprintf("https://api.zhihu.com/%s/%s", endpoint, url_param)
+  raw <- GET(url, custom_header, user_agent(""))
+  if (raw$status_code != 200)
+    stop("API refuses to return data (HTTP ", raw$status_code, ")")
+  res <- content(raw, as = "text", encoding = "UTF-8")
+  res <- fromJSON(res, flatten = TRUE)
+  res
+}
+
 # Function to download and combine data from multiple pages
 .fetch_data <- function(endpoint, url_params, all) {
   notdone <- TRUE
@@ -104,7 +119,7 @@ search_zhihu <- function(keyword,
                          time = c("all", "a_day", "a_week", "a_month", "three_month", "half_a_year", "a_year"),
                          sort = c("default", "upvoted_count", "created_time"),
                          offset = 0, all = TRUE) {
-  message("Searching content with keyword ", keyword, "...")
+  message("Searching content with keyword `", keyword, "`...")
   url_params <- list(
     t = "general", q = keyword, correction = 1, offset = offset, limit = 20, 
     filter_fields = "", lc_idx = offset, show_all_topics = 0, 
@@ -130,7 +145,7 @@ search_zhihu <- function(keyword,
 #' @param all logical, whether to fetch all search results, default to `TRUE`
 #' 
 zhihu_answer <- function(id, offset = 0, all = TRUE) {
-  message("Fetching answers from question ", id, "...")
+  message("Fetching answers from question `", id, "`...")
   include_string <- "data[*].is_normal,admin_closed_comment,reward_info,is_collapsed,annotation_action,annotation_detail,collapse_reason,is_sticky,collapsed_by,suggest_edit,comment_count,can_comment,content,editable_content,attachment,voteup_count,reshipment_settings,comment_permission,created_time,updated_time,review_info,relevant_info,question,excerpt,is_labeled,paid_info,paid_info_content,relationship.is_authorized,is_author,voting,is_thanked,is_nothelp,is_recognized;data[*].mark_infos[*].url;data[*].author.follower_count,vip_info,badge[*].topics;data[*].settings.table_of_content.enabled"
   include_string <- gsub("%2A", "*", URLencode(include_string, reserved = TRUE)) # asterisks are not encoded
   url_params <- list(
@@ -151,7 +166,7 @@ zhihu_answer <- function(id, offset = 0, all = TRUE) {
 #' @param all logical, whether to fetch all search results, default to `TRUE`
 #' 
 zhihu_comment <- function(id, type, offset = 0, all = TRUE) {
-  message("Fetching comments from content ", id, "...")
+  message("Fetching comments from content `", id, "`...")
   url_params <- list(
     order = "reverse", # "normal" for default order
     limit = 20, offset = offset, status = "open"
@@ -167,7 +182,7 @@ zhihu_comment <- function(id, type, offset = 0, all = TRUE) {
 #' @param all logical, whether to fetch all search results, default to `TRUE`
 #' 
 zhihu_child_comment <- function(id, type, offset = 0, all = TRUE) {
-  message("Fetching child comments of comment ", id, "...")
+  message("Fetching child comments of comment `", id, "`...")
   url_params <- list(
     limit = 20, offset = offset
   )
@@ -177,9 +192,21 @@ zhihu_child_comment <- function(id, type, offset = 0, all = TRUE) {
 
 #' Function to scrap user information
 #'
+#' This function takes either the id or the handle of a user.
+#' 
+#' Fetching user information based on id does not require the sign API.
+#'
+#' @param id Unique id of a user
 #' @param handle Unique handle of a user
 #' 
-zhihu_user <- function(handle) {
+zhihu_user <- function(id = NULL, handle = NULL) {
+  if (is.null(id) & is.null(handle)) {
+    stop("Missing `id` or `handle`")
+  }
+  if (!is.null(id)) {
+    message("Fetching information of user `", id, "`...")
+    return(.access_old_api("people", id))
+  }
   message("Fetching information of user `", handle, "`...")
   include_string <- "juror,locations,employments,gender,educations,business,voteup_count,thanked_Count,follower_count,following_count,cover_url,following_topic_count,following_question_count,following_favlists_count,following_columns_count,avatar_hue,answer_count,zvideo_count,articles_count,pins_count,question_count,columns_count,commercial_question_count,favorite_count,favorited_count,logs_count,included_answers_count,included_articles_count,included_text,message_thread_token,account_status,is_active,is_bind_phone,is_force_renamed,is_privacy_protected,is_blocking,is_blocked,is_following,is_followed,mutual_followees_count,vote_to_count,vote_from_count,thank_to_count,thank_from_count,thanked_count,description,hosted_live_count,participated_live_count,allow_message,recognized_count,widgets,industry_category,org_name,org_homepage,is_org_createpin_white_user,badge[?(type=best_answerer)].topics"
   url_params <- list(
@@ -187,4 +214,26 @@ zhihu_user <- function(handle) {
   )
   endpoint <- sprintf("members/%s", handle)
   .access_api(endpoint, url_params)
+}
+
+#' Function to scrap metadata of a specific question
+#' 
+#' Fetching question metadata does not require the sign API.
+#'
+#' @param id Unique id of the question
+#' 
+zhihu_question_metadata <- function(id) {
+  message("Fetching metadata of question `", id, "`...")
+  .access_old_api("questions", id)
+}
+
+#' Function to scrap metadata of a specific answer
+#' 
+#' Fetching answer metadata does not require the sign API.
+#'
+#' @param id Unique id of the answer
+#' 
+zhihu_answer_metadata <- function(id) {
+  message("Fetching metadata of answer `", id, "`...")
+  .access_old_api("answers", id)
 }

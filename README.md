@@ -9,6 +9,8 @@ R Scraper for Zhihu, a popular Quora-like question-and-answer platform in China
 * `zhihu_comment()`: retrieve comments from a given post
 * `zhihu_child_comment()`: retrieve child comments from a given comment
 * `zhihu_user()`: retrieve details of a given comment
+* `zhihu_question_metadata()`: retrieve metadata of a given question
+* `zhihu_answer_metadata()`: retrieve metadata of a given comment
 
 ## Note
 
